@@ -17,13 +17,15 @@ use App\Http\Controllers\ProductController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-Route::get('/login', [UserController::class, 'login']);
-Route::post('/register',  [UserController::class, 'register']);
+Route::post('/login', [UserController::class, 'login']);
+Route::post('/register', [UserController::class, 'register']);
+Route::post('/profile', [UserController::class, 'profile']);
+Route::post('/forgotPassword', [UserController::class, 'forgotPassword']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::post('/home', [UserController::class, 'redirect']);
 Route::apiResource('products', ProductController::class); // api for products
-Route::post('product-rate/{id}',[ rateController::class, 'store']); // api for rating product
+Route::post('product-rate/{id}', [rateController::class, 'store']); // api for rating product
 Route::apiResource('orders', OrderController::class);  // api for order show all orders, show specific order, make order, delete order 
