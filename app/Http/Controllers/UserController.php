@@ -2,7 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CheckOtpRequest;
+use App\Http\Requests\ForgetPasswordRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
+use App\Notifications\ResetPasswordVerificationNotification;
+
+use Ichtrojan\Otp\Models\Otp as ModelsOtp;
+use Ichtrojan\Otp\Otp;
+
 use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,27 +19,30 @@ use Illuminate\Support\Facades\Hash;
 class UserController extends Controller
 {
 
+    private $otp;
+
     function __construct()
     {
+        $this->otp = new Otp();
         $this->middleware('auth:sanctum')->only('profile');
     }
     public function redirect(Request $request)
     {
-        try {
-            $email = $request->email;
-            $password = $request->password;
-            if (Auth::attempt(['email' => $email, 'password' => $password])) {
-                $user = Auth::user();
-                if ($user->usertype == 0) {
-                    return view('userHome');
-                } else {
-                    return view('adminHome');
-                }
-            }
-        } catch (Throwable $th) {
-            dd($th);
-            return redirct()->back();
-        }
+        // try {
+        //     $email = $request->email;
+        //     $password = $request->password;
+        //     if (Auth::attempt(['email' => $email, 'password' => $password])) {
+        //         $user = Auth::user();
+        //         if ($user->usertype == 0) {
+        //             return view('userHome');
+        //         } else {
+        //             return view('adminHome');
+        //         }
+        //     }
+        // } catch (Throwable $th) {
+        //     dd($th);
+        //     return redirct()->back();
+        // }
     }
 
     public function login(Request $request)
@@ -118,11 +129,34 @@ class UserController extends Controller
 
 
 
-    public function forgotPassword(Request $request)
+    public function forgotPassword(ForgetPasswordRequest $request)
     {
+        $input = $request->only('email');
+        $user = User::where('email', $input['email'])->first();
 
+        if ($user) {
+            $user->notify(new ResetPasswordVerificationNotification());
+            return response()->json(['message' => 'We have sent you a link to reset your password'], 200);
+        }
+
+        return response()->json(['message' => 'Email not found'], 404);
     }
 
+
+    public function resetPassword(ResetPasswordRequest $request)
+    {
+        $otp2 = $this->otp->validate($request->email, $request->otp);
+        if (!$otp2->status) {
+            return response()->json(['error' => $otp2], 401);
+        }
+        $user = User::where('email', $request->email)->first();
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+        $user->tokens()->delete();
+        $success['success'] = true;
+        return response()->json($success, 200);
+    }
 
 
 

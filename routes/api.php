@@ -20,7 +20,11 @@ use App\Http\Controllers\ProductController;
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/profile', [UserController::class, 'profile']);
-Route::post('/forgotPassword', [UserController::class, 'forgotPassword']);
+
+//------------------------forget password-------------------
+Route::post('forgotpassword', [UserController::class, 'forgotPassword']);
+Route::post('resetpassword', [UserController::class, 'resetPassword']);
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
