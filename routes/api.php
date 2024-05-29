@@ -31,5 +31,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::post('/home', [UserController::class, 'redirect']);
 Route::apiResource('products', ProductController::class); // api for products
+Route::get('/product', [ProductController::class, 'show']);
 Route::post('product-rate/{id}', [rateController::class, 'store']); // api for rating product
 Route::apiResource('orders', OrderController::class);  // api for order show all orders, show specific order, make order, delete order 
+Route::get('/order', [OrderController::class, 'show']);

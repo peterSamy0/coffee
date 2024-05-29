@@ -6,31 +6,73 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Order_item;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    // show all orders api: http://localhost:8000/api/orders  (method: get)
+    function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
+
     public function index()
     {
-        try{
+        try {
+            $user = Auth::user();
+
+
             $orders = Order::with([
                 'user:id,name',
                 'order_items.product:id,name,price'
-            ])->get();
+            ])->where('user_id', $user->id)->get();
+
             return $orders;
-        }catch(Throwable $th){
-            return response()->json('error: some thing went wrong', 403);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => 'Something went wrong'], 500);
         }
     }
-    // to show spicific order api: http://localhost:8000/api/orders/id  (method: get)
-    public function show($id)
+
+    // public function show($id)
+    // {
+    //     try {
+    //         $user = Auth::user();
+
+
+    //         $order = Order::with([
+    //             'user:id,name',
+    //             'order_items.product:id,name,price'
+    //         ])->where('user_id', $user->id)->findOrFail($id);
+
+    //         return $order;
+    //     } catch (ModelNotFoundException $exception) {
+    //         return response()->json(['error' => 'Order not found'], 404);
+    //     } catch (\Throwable $th) {
+    //         return response()->json(['error' => 'Something went wrong'], 500);
+    //     }
+    // }
+
+
+
+    public function show(Request $request)
     {
         try {
+            $user = Auth::user();
+
+            // Retrieve the order ID from the query parameters
+            $orderId = $request->query('order_id');
+
+            // Check if the order ID query parameter is provided
+            if (!$orderId) {
+                return response()->json(['error' => 'Order ID query parameter is required'], 400);
+            }
+
             $order = Order::with([
                 'user:id,name',
                 'order_items.product:id,name,price'
-            ])->findOrFail($id);
-    
+            ])->where('user_id', $user->id)->findOrFail($orderId);
+
             return $order;
         } catch (ModelNotFoundException $exception) {
             return response()->json(['error' => 'Order not found'], 404);
@@ -38,50 +80,75 @@ class OrderController extends Controller
             return response()->json(['error' => 'Something went wrong'], 500);
         }
     }
-    // to make order for example api: http://localhost:8000/api/orders (method: post)
-    /*
-    {
-        "user_id": 2,
-        "products": [1,2]
-    }
-    */
+
+
+
+
+
+
+
+
+
     public function store(Request $request)
     {
         try {
+            $user = Auth::user();
+
+
             $order = new Order;
-            $order->user_id = $request->user_id;
+            $order->user_id = $user->id;
+
 
             $totalPrice = 0;
-            $products = $request->products;
-            foreach ($products as $product) {
-                $productData = Product::findorfail($product);
-                $totalPrice += $productData->price;
+            foreach ($request->products as $productId) {
+                $product = Product::findOrFail($productId);
+                $totalPrice += $product->price;
             }
+
+
+            DB::beginTransaction();
+
+
             $order->total_price = $totalPrice;
             $order->save();
-    
-            $products = $request->products;
-            foreach ($products as $product) {
-                $order_item = new Order_item;
-                $order_item->product_id = $product;
-                $order_item->order_id = $order->id;
-                $order_item->save();
+
+
+            foreach ($request->products as $productId) {
+                $orderItem = new Order_item;
+                $orderItem->product_id = $productId;
+                $orderItem->order_id = $order->id;
+                $orderItem->save();
             }
+
+
+            DB::commit();
+
             return response()->json(['success' => 'Order added successfully'], 200);
-        }
-        catch (\Throwable $th) {
+        } catch (\Throwable $th) {
+
+            DB::rollBack();
+
             return response()->json(['error' => 'Something went wrong'], 500);
         }
     }
-    // to delete spicific order api: http://localhost:8000/api/orders/id (method: delete)
+
+
     public function destroy($id)
     {
         try {
+            $user = Auth::user();
+
+
+            if ($user->usertype !== 'admin') {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+
             $order = Order::findorfail($id);
             $order->delete();
-            return response()->json(['success' => 'deleted successfully'], 200);
-        }
-        catch (\Throwable $th) {
+
+            return response()->json(['success' => 'Deleted successfully'], 200);
+        } catch (\Throwable $th) {
             return response()->json(['error' => 'Something went wrong'], 500);
         }
     }

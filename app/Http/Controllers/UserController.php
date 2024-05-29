@@ -26,24 +26,6 @@ class UserController extends Controller
         $this->otp = new Otp();
         $this->middleware('auth:sanctum')->only('profile');
     }
-    public function redirect(Request $request)
-    {
-        // try {
-        //     $email = $request->email;
-        //     $password = $request->password;
-        //     if (Auth::attempt(['email' => $email, 'password' => $password])) {
-        //         $user = Auth::user();
-        //         if ($user->usertype == 0) {
-        //             return view('userHome');
-        //         } else {
-        //             return view('adminHome');
-        //         }
-        //     }
-        // } catch (Throwable $th) {
-        //     dd($th);
-        //     return redirct()->back();
-        // }
-    }
 
     public function login(Request $request)
     {
@@ -85,7 +67,6 @@ class UserController extends Controller
             $user = new User;
             $user->name = $request->name;
             $user->email = $request->email;
-            $user->userType = 0;
             $user->phone = $request->phone;
             $user->password = Hash::make($request->password);
             $user->save();
