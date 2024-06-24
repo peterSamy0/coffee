@@ -87,16 +87,16 @@ class UserController extends Controller
             if ($existingUser) {
                 return response()->json(['error' => 'Email already exists. Please use a different email.'], 400);
             }
-    
+
             // Create a new user
             $user = new User;
             $user->name = $request->name;
             $user->email = $request->email;
             $user->phone = $request->phone;
-            $user->usertype = 0;
+            $user->usertype = 'user';
             $user->password = Hash::make($request->password);
             $user->save();
-    
+
             return response()->json(['success' => 'Registration successful. Please log in'], 200);
         } catch (\Throwable $th) {
             // Log the exception message for debugging
@@ -104,7 +104,7 @@ class UserController extends Controller
             return response()->json(['error' => $th->getMessage()], 400);
         }
     }
-    
+
 
 
     public function profile(Request $request)
